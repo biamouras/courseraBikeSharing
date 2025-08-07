@@ -19,6 +19,24 @@ This dataset contains the daily count of rental bike transactions between years 
 
 Fanaee-T, Hadi, and Gama, Joao, 'Event labeling combining ensemble detectors and background knowledge', Progress in Artificial Intelligence (2013): pp. 1-15, Springer Berlin Heidelberg
 
+## Context
+
+A bike rental company is looking to improve its demand forecasting accuracy to optimize its fleet management and pricing strategy. They collect data on daily rental transactions and want to use it to predict future demand.
+
+The company aims to use the forecasts to determine the optimal number of bikes to keep in each station and to set dynamic pricing based on the predicted demand. Making these forecasts will enhance the company's logistic processes, help reduce costs, and maximize profits.
+
+Project Objectives:
+
+ - Describe data to answer key questions to uncover insights
+ - Fit well-validated time series models for forecasting future rental bikes demands
+ - Provide analytic insights and data-driven recommendations
+
+## Your Challenge
+
+Your challenge will be to conduct a time series data analysis to forecast future rental bike demands. To do this, you will load, clean, process, analyze, and visualize data. You will also pose questions, and seek to answer them meaningfully using the dataset provided. In addition, you will build time series models to forecast future demands.
+
+In this project, we'll use a data set containing the hourly and daily count of rental bikes between the years 2011 and 2012 in the Capital bike share system in Washington, DC, with the corresponding weather and seasonal information.
+
 # Task One: Load and explore the data
 
 ## Load data and install packages
@@ -30,35 +48,215 @@ Therefore, only the `targets` and the local packages will be loaded in this sess
 ```{r}
 ## Import required packages
 library(targets)
+library(ggplot2)
+
+theme_set(hrbrthemes::theme_ipsum())
+
 tar_source()
 ```
 
-The dataset was downloaded into the `data-raw` folder in a `.zip` extension.
+The dataset was downloaded into the `data-raw` folder with a `.zip` extension.
 
 ```{r}
 #| label: load data
-
+tar_load(tab_day)
+tar_load(tab_hour)
 ```
 
 ## Describe and explore the data
 
-```{r}
+The `day.csv` file contains `r nrow(tab_day)` rows and `r ncol(tab_day)` columns.
 
+```{r}
+dplyr::glimpse(tab_day)
+```
+
+The `hour.csv` file contains `r nrow(tab_hour)` rows and `r ncol(tab_hour)` columns.
+
+```{r}
+dplyr::glimpse(tab_hour)
+```
+
+Both tables present the counting of the bike rentals, one daily (`tab_day`) and the other hourly (`tab_hourly`). The one column difference is due to the `hr` column, which identifies the hour related to the counting.
+
+The columns `holiday`, `weekday` and `workingday` identifies:
+ - `holiday`: if the day was a holiday (1) or not (0);
+ - `weekday`: the day of the week;
+ - `workingday`: if the day was a working day (1) or not (0).
+
+### 1. Is there any seasonality in data?
+
+At first glance, there's a clear difference between the two years analyzed. Also, it indicates that there's a difference among the seasons.
+
+```{r}
+tab_day |>
+  ggplot(aes(dteday, cnt)) +
+  geom_line() +
+  labs(
+    title = "Daily bike rental distribution",
+    x = "",
+    y = "Daily counts"
+  )
+```
+
+Viewing the boxplot for each season, the Winter has the lower median and the Summer has the higher median and 3rd quarter.
+
+```{r}
+tab_day |>
+  tidyr::pivot_longer(
+    cols = c(registered, casual, cnt)
+  ) |>
+  dplyr::mutate(
+    name = factor(
+      name,
+      levels = c("cnt", "registered", "casual"),
+      labels = c("Total", "Regular users", "Casual users")
+    )
+  ) |>
+  ggplot(aes(season, value)) +
+  geom_jitter(aes(color = value, fill = value), alpha = 0.3) +
+  geom_boxplot(aes(xmin = after_scale(x)), fill = "transparent") +
+  geom_violin(aes(xmax = after_scale(x)), fill = "transparent") +
+  facet_wrap("name", dir = "v", scales = "free") +
+  labs(
+    title = "Daily distribution of bike rentals by season and type of user",
+    x = "",
+    y = "Daily counts"
+  ) +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c() +
+  theme(legend.position = "none")
 ```
 
 
+```{r}
+tab_day |>
+  tidyr::pivot_longer(
+    cols = c(registered, casual, cnt)
+  ) |>
+  dplyr::mutate(
+    name = factor(
+      name,
+      levels = c("cnt", "registered", "casual"),
+      labels = c("Total", "Regular users", "Casual users")
+    )
+  ) |>
+  ggplot(aes(mnth, value)) +
+  geom_jitter(aes(color = value, fill = value), alpha = 0.3) +
+  geom_boxplot(aes(xmin = after_scale(x)), fill = "transparent") +
+  geom_violin(aes(xmax = after_scale(x)), fill = "transparent") +
+  labs(
+    title = "Daily distribution of bike rentals by month and type of user",
+    x = "",
+    y = "Daily counts"
+  ) +
+  facet_wrap("name", dir = "v", scales = "free") +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c() +
+  theme(legend.position = "none")
+```
+
+### 2. Is there any difference in day of week?
+
+Looking at the overall, there's no visual difference among the days of the week.
+
+However, looking at the registered counts, which are related to the regular users of the system, the medians are lower during the weekends. The drop is balanced by the increase of the casual users.
+
+```{r}
+tab_day |>
+  tidyr::pivot_longer(
+    cols = c(registered, casual, cnt)
+  ) |>
+  dplyr::mutate(
+    name = factor(
+      name,
+      levels = c("cnt", "registered", "casual"),
+      labels = c("Total", "Regular users", "Casual users")
+    )
+  ) |>
+  ggplot(aes(weekday, value)) +
+  geom_jitter(aes(color = value, fill = value), alpha = 0.3) +
+  geom_boxplot(aes(xmin = after_scale(x)), fill = "transparent") +
+  geom_violin(aes(xmax = after_scale(x)), fill = "transparent") +
+  labs(
+    title = "Daily distribution of bike rentals by week days and type of user",
+    x = "",
+    y = "Daily counts"
+  ) +
+  facet_wrap("name", dir = "v", scales = "free") +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c() +
+  theme(legend.position = "none")
+```
+
+### 3. Association among variables
+
+The correlations between the numerical variables and the counting show that the temperature has a higher absolute association.
+
+There's a high correlation between temp and atemp (0.99).
+
+```{r}
+cor_temp <- cor(tab_day$temp, tab_day$cnt)
+cor_atemp <- cor(tab_day$atemp, tab_day$cnt)
+cor_hum <- cor(tab_day$hum, tab_day$cnt)
+cor_windspeed <- cor(tab_day$windspeed, tab_day$cnt)
+
+tab_day |>
+  tidyr::pivot_longer(
+    cols = c(temp, atemp, hum, windspeed)
+  ) |>
+  dplyr::mutate(
+    name = factor(
+      name,
+      levels = c("temp", "atemp", "hum", "windspeed"),
+      labels = c(
+        paste0("Temperature (cor ", round(cor_temp, 3), ")"),
+        paste0("Feeling temperature (cor ", round(cor_atemp, 3), ")"),
+        paste0("Humidity (cor ", round(cor_hum, 3), ")"),
+        paste0("Wind speed (cor ", round(cor_windspeed, 3), ")")
+      )
+    )
+  ) |>
+  ggplot(aes(value, cnt)) +
+  geom_point(aes(color = season)) +
+  labs(
+    title = "Daily distribution of bike rentals",
+    x = "",
+    y = "Daily counts"
+  ) +
+  facet_wrap("name", dir = "v", scales = "free") +
+  scale_fill_viridis_d() +
+  scale_color_viridis_d() +
+  theme(legend.position = "below")
+```
+
+### 4. Does the hour impacts the demand?
+
+There are two peaks during the working days: the first at 8 a.m.; the second at 5 p.m.. On weekends or holidays, the curve is smother and does not have a clear peak during the afternoon.
+
+```{r}
+tab_hour |>
+  tidyr::pivot_longer(
+    cols = c(registered, casual, cnt)
+  ) |>
+  dplyr::mutate(
+    hr = factor(hr),
+    name = factor(
+      name,
+      levels = c("cnt", "registered", "casual"),
+      labels = c("Total", "Regular users", "Casual users")
+    )
+  ) |>
+  ggplot(aes(hr, value)) +
+  geom_boxplot() +
+  facet_grid(name~workingday)
+```
 
 # Task Two: Create interactive time series plots
 
 ```{r}
-## Read about the timetk package
-# ?timetk
-
 
 ```
-
-
-
 
 # Task Three: Smooth time series data
 
