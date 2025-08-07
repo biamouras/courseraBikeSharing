@@ -18,12 +18,17 @@ label_date_tags <- function(tab){
       season = factor(
         season,
         levels = 1:4,
-        labels = c("Spring", "Summer", "Fall", "Winter")
+        labels = c("Winter", "Spring", "Summer", "Fall")
+      ),
+      mnth = factor(
+        mnth,
+        levels = 1:12,
+        labels = lubridate::month(1:12, label = TRUE, locale = "en_US")
       ),
       weekday = factor(
         weekday,
         levels = 0:6,
-        labels = lubridate::wday(1:7, label = TRUE)
+        labels = lubridate::wday(1:7, label = TRUE, locale = "en_US")
       ),
       holiday = factor(
         holiday,
