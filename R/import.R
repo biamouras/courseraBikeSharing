@@ -36,7 +36,7 @@ label_date_tags <- function(tab){
       ),
       workingday = factor(
         workingday,
-        labels = c("Working day", "Weekend or Holiday")
+        labels = c("Weekend or Holiday", "Working day")
       ),
       weathersit = factor(
         weathersit,
