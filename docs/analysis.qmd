@@ -255,8 +255,23 @@ tab_hour |>
 # Task Two: Create interactive time series plots
 
 ```{r}
-
+tab_day |>
+  timetk::plot_time_series(
+    dteday, cnt,
+    .interactive = TRUE,
+    .plotly_slider = TRUE
+  )
 ```
+
+Looking for any amomalies, we identified 7 in total.
+```{r}
+tab_day |>
+  timetk::plot_anomaly_diagnostics(
+    dteday, cnt
+  )
+```
+
+The
 
 # Task Three: Smooth time series data
 
